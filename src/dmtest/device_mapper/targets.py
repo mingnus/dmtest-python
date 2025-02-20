@@ -7,6 +7,8 @@ class Target:
         self.sector_count = sector_count
         self.args = args
 
+    def post_remove_check(self):
+        pass
 
 class ErrorTarget(Target):
     def __init__(self, sector_count):

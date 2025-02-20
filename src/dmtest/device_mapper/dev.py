@@ -45,6 +45,9 @@ class Dev:
 
     def remove(self):
         dm.remove(self._name)
+        if self._active_table is not None:
+            for target in self._active_table:
+                target.post_remove_check()
 
     def message(self, sector, *args):
         return dm.message(self._name, sector, *args)
