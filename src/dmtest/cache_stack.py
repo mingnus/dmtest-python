@@ -77,10 +77,11 @@ class CacheStack:
         self._cache.load(self._cache_table())
 
     def resize(self, new_size: int):
-        if self._cache is None:
-            raise Exception("inactive")
-
         self._target_len = new_size
+
+        if self._cache is None:
+            return
+
         with self._cache.pause():
             self.reload()
 
@@ -120,6 +121,7 @@ class ManagedCacheStack:
             vm.add_volume(tvm.LinearVolume("cdata", cache_size), lambda seg: seg.dev == cache_dev)
 
         self._vm = vm
+        self._cache_dev = cache_dev
         self._origin_dev = origin_dev
         self._opts = opts
 
@@ -163,15 +165,31 @@ class ManagedCacheStack:
                 yield cache
 
     def resize_cache_dev(self, new_size):
-        if self._top_level is None:
-            raise Exception("inactive")
+        if (self._top_level is None) ^ (self._support_devs is None):
+            raise Exception("inactive top level or supported devs")
 
         is_expand = new_size > self._vm.size("cdata")
 
+        self._vm.resize(
+            "cdata",
+            new_size,
+            {lambda seg: seg.dev == self.cache_dev} if self.cache_dev is not None else None
+        )
+
+        if self._top_level is None:
+            return
+
         with self._top_level._cache.pause():
             with self._support_devs[1].pause():
-                self._vm.resize("cdata", new_size)
                 self._support_devs[1].load(self._vm.table("cdata"))
 
             if is_expand:
                 self._top_level.reload()
+
+    def resize_origin(self, new_size):
+        self._opts["target_len"] = new_size
+
+        if self._top_level is None:
+            return
+
+        self._top_level.resize(new_size)
