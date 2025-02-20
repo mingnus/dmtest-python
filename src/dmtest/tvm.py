@@ -99,10 +99,19 @@ class Volume:
     def size(self) -> int:
         return sum(seg.length for seg in self._segments)
 
-    def resize(self, allocator, new_length):
+    def resize(
+        self,
+        allocator,
+        new_length,
+        segment_predicate: Optional[Callable[[Segment], bool]] = None,
+    ):
         raise NotImplementedError()
 
-    def allocate(self, allocator):
+    def allocate(
+        self,
+        allocator,
+        segment_predicate: Optional[Callable[[Segment], bool]] = None,
+    ):
         raise NotImplementedError()
 
 
@@ -114,7 +123,12 @@ class LinearVolume(Volume):
     def __init__(self, name: str, length: int):
         super().__init__(name, length)
 
-    def resize(self, allocator, new_length):
+    def resize(
+        self,
+        allocator,
+        new_length,
+        segment_predicate: Optional[Callable[[Segment], bool]] = None,
+    ):
         if not self._allocated:
             self._length = new_length
             return
@@ -122,7 +136,7 @@ class LinearVolume(Volume):
         if new_length < self._length:
             raise NotImplementedError("reduce not implemented")
 
-        new_segs = allocator.allocate_segments(new_length - self._length)
+        new_segs = allocator.allocate_segments(new_length - self._length, segment_predicate)
         self._segments += new_segs
         self._targets += _segs_to_targets(new_segs)
         self._length = new_length
@@ -174,9 +188,14 @@ class VM:
     def size(self, name: str) -> int:
         return self._volumes[name].size()
 
-    def resize(self, name: str, new_size: int) -> None:
+    def resize(
+        self,
+        name: str,
+        new_size: int,
+        segment_predicate: Optional[Callable[[Segment], bool]] = None,
+    ) -> None:
         self._check_exists(name)
-        self._volumes[name].resize(self._allocator, new_size)
+        self._volumes[name].resize(self._allocator, new_size, segment_preicate)
 
     def segments(self, name: str) -> List[Segment]:
         self._check_exists(name)
