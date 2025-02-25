@@ -1,9 +1,9 @@
 ["/thin/snapshot/ext4/break-sharing"]
-executables = [ "blockdev", "dd", "dmsetup", "echo", "fsck.ext4", "mkfs.ext4", "mount", "umount",]
+executables = [ "blockdev", "dd", "dmsetup", "echo", "fsck.ext4", "mkfs.ext4", "mount", "thin_check", "umount",]
 targets = [ "thin", "thin-pool",]
 
 ["/thin/snapshot/xfs/break-sharing"]
-executables = [ "blockdev", "dd", "dmsetup", "echo", "mkfs.xfs", "mount", "umount", "xfs_repair",]
+executables = [ "blockdev", "dd", "dmsetup", "echo", "mkfs.xfs", "mount", "thin_check", "umount", "xfs_repair",]
 targets = [ "thin", "thin-pool",]
 
 ["/bufio/create"]
@@ -59,43 +59,43 @@ executables = [ "blockdev", "dmsetup",]
 targets = [ "bufio_test",]
 
 ["/thin/creation/activate-thin-while-pool-suspended-fails"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "dd", "dmsetup", "thin_check",]
 targets = [ "thin", "thin-pool",]
 
 ["/thin/creation/huge-block-size"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "dd", "dmsetup", "thin_check",]
 targets = [ "thin", "thin-pool",]
 
 ["/thin/creation/largest-block-size-succeeds"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "dd", "dmsetup", "thin_check",]
 targets = [ "thin-pool",]
 
 ["/thin/creation/largest-thin-id-succeeds"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "dd", "dmsetup", "thin_check",]
 targets = [ "thin", "thin-pool",]
 
 ["/thin/creation/lots-of-empty-snaps"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "dd", "dmsetup", "thin_check",]
 targets = [ "thin-pool",]
 
 ["/thin/creation/lots-of-empty-thins"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "dd", "dmsetup", "thin_check",]
 targets = [ "thin-pool",]
 
 ["/thin/creation/lots-of-recursive-snaps"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "dd", "dmsetup", "thin_check",]
 targets = [ "thin-pool",]
 
 ["/thin/creation/non-power-of-2-block-size-fails"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "dd", "dmsetup", "thin_check",]
 targets = [ "thin-pool",]
 
 ["/thin/creation/too-large-a-thin-id-fails"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "dd", "dmsetup", "thin_check",]
 targets = [ "thin-pool",]
 
 ["/thin/creation/too-large-block-size-fails"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "dd", "dmsetup", "thin_check",]
 targets = [ "thin-pool",]
 
 ["/thin/creation/too-small-a-metadata-dev-fails"]
@@ -103,35 +103,35 @@ executables = [ "blockdev", "dmsetup",]
 targets = [ "linear",]
 
 ["/thin/creation/too-small-block-size-fails"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "dd", "dmsetup", "thin_check",]
 targets = [ "thin-pool",]
 
 ["/thin/deletion/create-delete-cycle"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "dd", "dmsetup", "thin_check",]
 targets = [ "thin-pool",]
 
 ["/thin/deletion/create-delete-rolling"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "dd", "dmsetup", "thin_check",]
 targets = [ "thin-pool",]
 
 ["/thin/deletion/create-many-delete-many"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "dd", "dmsetup", "thin_check",]
 targets = [ "thin-pool",]
 
 ["/thin/deletion/delete-active-id-fails"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "dd", "dmsetup", "thin_check",]
 targets = [ "thin", "thin-pool",]
 
 ["/thin/deletion/delete-after-out-of-space"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "dd", "dmsetup", "thin_check",]
 targets = [ "thin", "thin-pool",]
 
 ["/thin/deletion/delete-provisioned-thin"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "dd", "dmsetup", "thin_check",]
 targets = [ "thin", "thin-pool",]
 
 ["/thin/deletion/delete-unknown-id-fails"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "dd", "dmsetup", "thin_check",]
 targets = [ "thin-pool",]
 
 ["/thin/discard/blktrace"]
@@ -143,15 +143,15 @@ executables = [ "blkparse", "blktrace", "blockdev", "dd", "dmsetup",]
 targets = [ "thin", "thin-pool",]
 
 ["/thin/discard/xml-tests"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "dd", "dmsetup", "thin_check",]
 targets = [ "thin", "thin-pool",]
 
 ["/thin/snapshot/ext4/create-snap"]
-executables = [ "blockdev", "dd", "dmsetup", "echo", "fsck.ext4", "mkfs.ext4", "mount", "umount",]
+executables = [ "blockdev", "dd", "dmsetup", "echo", "fsck.ext4", "mkfs.ext4", "mount", "thin_check", "umount",]
 targets = [ "thin", "thin-pool",]
 
 ["/thin/snapshot/ext4/overwrite"]
-executables = [ "blockdev", "dd", "dmsetup", "echo", "fsck.ext4", "mkfs.ext4", "mount", "umount",]
+executables = [ "blockdev", "dd", "dmsetup", "echo", "fsck.ext4", "mkfs.ext4", "mount", "thin_check", "umount",]
 targets = [ "thin", "thin-pool",]
 
 ["/thin/snapshot/many-snapshots-of-same-volume"]
@@ -163,27 +163,27 @@ executables = [ "blockdev", "dd", "dmsetup", "dt",]
 targets = [ "thin", "thin-pool",]
 
 ["/thin/snapshot/pattern-stomper/origin"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "dd", "dmsetup", "thin_check",]
 targets = [ "thin", "thin-pool",]
 
 ["/thin/snapshot/pattern-stomper/snap"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "dd", "dmsetup", "thin_check",]
 targets = [ "thin", "thin-pool",]
 
 ["/thin/snapshot/ref-count-tree"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "dd", "dmsetup", "thin_check",]
 targets = [ "thin", "thin-pool",]
 
 ["/thin/snapshot/space-use"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "dd", "dmsetup", "thin_check",]
 targets = [ "thin", "thin-pool",]
 
 ["/thin/snapshot/xfs/create-snap"]
-executables = [ "blockdev", "dd", "dmsetup", "echo", "mkfs.xfs", "mount", "umount", "xfs_repair",]
+executables = [ "blockdev", "dd", "dmsetup", "echo", "mkfs.xfs", "mount", "thin_check", "umount", "xfs_repair",]
 targets = [ "thin", "thin-pool",]
 
 ["/thin/snapshot/xfs/overwrite"]
-executables = [ "blockdev", "dd", "dmsetup", "echo", "mkfs.xfs", "mount", "umount", "xfs_repair",]
+executables = [ "blockdev", "dd", "dmsetup", "echo", "mkfs.xfs", "mount", "thin_check", "umount", "xfs_repair",]
 targets = [ "thin", "thin-pool",]
 
 ["/thin/snapshot/many-snaps-with-changes"]
@@ -195,19 +195,19 @@ executables = [ "blockdev", "dd", "dmsetup", "echo", "fsck.ext4", "git", "mkfs.e
 targets = [ "thin", "thin-pool",]
 
 ["/thin/external-origin/snap-bigger-than-origin"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "dd", "dmsetup", "thin_check",]
 targets = [ "linear", "thin", "thin-pool",]
 
 ["/thin/external-origin/snap-equal-size"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "dd", "dmsetup", "thin_check",]
 targets = [ "linear", "thin", "thin-pool",]
 
 ["/thin/external-origin/snap-fractional-tail-block"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "dd", "dmsetup", "thin_check",]
 targets = [ "linear", "thin", "thin-pool",]
 
 ["/thin/external-origin/snap-smaller-than-origin"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "dd", "dmsetup", "thin_check",]
 targets = [ "linear", "thin", "thin-pool",]
 
 ["/blk-archive/rolling-snaps"]
@@ -315,9 +315,9 @@ executables = [ "blockdev", "dd", "dmsetup", "vdoformat",]
 targets = [ "vdo",]
 
 ["/cache/creation/small_config_mq"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "cache_check", "dd", "dmsetup",]
 targets = [ "cache", "linear",]
 
 ["/cache/creation/small_config_smq"]
-executables = [ "blockdev", "dd", "dmsetup",]
+executables = [ "blockdev", "cache_check", "dd", "dmsetup",]
 targets = [ "cache", "linear",]
