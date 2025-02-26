@@ -5,8 +5,8 @@
 - Install python deps:
 
 ```bash
- pip install -r requirements.txt
- ```
+pip install -r requirements.txt
+```
 
 - Edit config.toml for your system
 - Check for tool requirements by running:
@@ -33,6 +33,7 @@ the environment variable `DMTEST_RESULT_SET`
 ```bash
 export DMTEST_RESULT_SET=baseline
 ```
+
 ## List tests
 
 ```bash
@@ -40,15 +41,14 @@ export DMTEST_RESULT_SET=baseline
 ./dmtest list --rx <regex>
 ```
 
-
 ## Run tests
 
 ```bash
-./dmtest run -rx <regex>
+./dmtest run --rx <regex>
 ```
 
 ## List test logs
+
 ```bash
 ./dmtest log 
 ```
-
