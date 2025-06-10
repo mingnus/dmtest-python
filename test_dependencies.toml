@@ -337,3 +337,19 @@ targets = [ "cache", "linear",]
 ["/cache/resize/shrink_origin_with_teardown_should_fail_if_blocks_dirty"]
 executables = [ "blockdev", "cache_check", "cache_restore", "dmsetup",]
 targets = [ "cache", "linear",]
+
+["/cache/passthrough/passthrough_does_not_demote_reads"]
+executables = [ "blockdev", "cache_check", "dd", "dmsetup", "pdata_tools_dev",]
+targets = [ "cache", "linear",]
+
+["/cache/passthrough/passthrough_demotes_writes"]
+executables = [ "blockdev", "cache_check", "dd", "dmsetup", "pdata_tools_dev",]
+targets = [ "cache", "linear",]
+
+["/cache/passthrough/passthrough_fails_with_dirty_blocks"]
+executables = [ "blockdev", "cache_check", "dmsetup", "pdata_tools_dev",]
+targets = [ "cache", "linear",]
+
+["/cache/passthrough/passthrough_never_promotes"]
+executables = [ "blockdev", "cache_check", "dd", "dmsetup",]
+targets = [ "cache", "linear",]

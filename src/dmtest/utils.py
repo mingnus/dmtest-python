@@ -149,6 +149,10 @@ def wipe_device(dev, sectors=None):
     _dd_device("/dev/zero", _to_path(dev), "oflag=direct", sectors, sync=True)
 
 
+def read_device_to_null(dev, sectors=None):
+    _dd_device(_to_path(dev), "/dev/null", "", sectors)
+
+
 def dev_size(dev):
     (_, stdout, _) = process.run(f"blockdev --getsz {_to_path(dev)}")
     return int(stdout)
