@@ -20,7 +20,7 @@ class CacheStack:
         self._fast_dev = fast_dev
         self._origin_dev = origin_dev
         self._metadata_dev = metadata_dev
-        format_cache = opts.pop("format", False)
+        format_cache = opts.pop("format", True)
 
         # cache target length, which could be smaller than the origin device size
         self._target_len = opts.pop("target_len", utils.dev_size(origin_dev))
