@@ -97,10 +97,6 @@ def uncache(cache):
 def wait_for_clean_cache(cache):
     raise NotImplementedError()
 
-# TODO
-def prepare_populated_cache(cache):
-    raise NotImplementedError()
-
 class ManagedCacheStack:
     def __init__(self, fast_dev, origin_dev, **opts):
         metadata_size = opts.pop("metadata_size", units.meg(4))
@@ -193,3 +189,15 @@ class ManagedCacheStack:
             return
 
         self._top_level.resize(new_size)
+
+    def block_size(self):
+        return self._opts["block_size"]
+
+    def cache_size(self):
+        return self._vm.size("cdata")
+
+    def target_len(self):
+        return self._opts["target_len"]
+
+    def metadata_version(self):
+        return self._opts.get("metadata_version", 2)
