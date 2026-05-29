@@ -38,18 +38,34 @@ class Test(NamedTuple):
 def _parse_test_entry(entry):
     if len(entry) == 2:
         path, callback = entry
-        return path, callback, None
+        return path, callback, None, None
 
     if len(entry) == 3:
-        path, callback, dep_fn = entry
-        if not callable(dep_fn):
+        path, callback, third = entry
+        if callable(third):
+            return path, callback, third, None
+        if isinstance(third, (list, set, frozenset)):
+            return path, callback, None, third
+        raise TypeError(
+            f"test '{path}': 3rd element must be callable (dep_fn) or list (tags), "
+            f"got {type(third).__name__}"
+        )
+
+    if len(entry) == 4:
+        path, callback, dep_fn, tags = entry
+        if dep_fn is not None and not callable(dep_fn):
             raise TypeError(
-                f"test '{path}': 3rd element must be callable (dep_fn), "
+                f"test '{path}': dep_fn must be callable or None, "
                 f"got {type(dep_fn).__name__}"
             )
-        return path, callback, dep_fn
+        if tags is not None and not isinstance(tags, (list, set, frozenset)):
+            raise TypeError(
+                f"test '{path}': tags must be a list, "
+                f"got {type(tags).__name__}"
+            )
+        return path, callback, dep_fn, tags
 
-    raise ValueError(f"test entry must have 2-3 elements, got {len(entry)}")
+    raise ValueError(f"test entry must have 2-4 elements, got {len(entry)}")
 
 
 class TestRegister:
@@ -68,9 +84,12 @@ class TestRegister:
             prefix += "/"
 
         for entry in tests:
-            path, callback, dep_fn = _parse_test_entry(entry)
+            path, callback, dep_fn, tags = _parse_test_entry(entry)
             dep_fn = dep_fn or batch_dep_fn
-            self.register(prefix + path.lstrip("/"), callback, dep_fn, batch_tags)
+            merged = set(batch_tags or [])
+            if tags:
+                merged.update(tags)
+            self.register(prefix + path.lstrip("/"), callback, dep_fn, merged or None)
 
     def get_tags(self, path):
         t = self._tests.get(path)
