@@ -53,7 +53,7 @@ def t_corrupt_geometry(fix):
         pass
     start_time = time.time()
     # Trash just one (4kB) block
-    wipe_device(fix.cfg["data_dev"], 8)
+    wipe_device(fix.cfg("data_dev"), 8)
     stack = standard_stack(fix, format = False)
     started = False
     try:
