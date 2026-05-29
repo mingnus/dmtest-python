@@ -161,7 +161,7 @@ def average_results(res_list: Sequence[db.TestResult]) -> Optional[AvgResult]:
 
 def cmd_list(tests: test_register.TestRegister, args, results: db.TestResults):
     result_set = get_result_set(args)
-    filter = build_filter(args)
+    filter = build_filter(args, tests, args.cfg)
     paths = sorted(tests.paths(results, result_set, filter))
     formatter = TreeFormatter()
 
@@ -187,7 +187,7 @@ def cmd_list(tests: test_register.TestRegister, args, results: db.TestResults):
 
 def cmd_log(tests: test_register.TestRegister, args, results: db.TestResults):
     result_set = get_result_set(args)
-    filter = build_filter(args)
+    filter = build_filter(args, tests, args.cfg)
     paths = sorted(tests.paths(results, result_set, filter))
 
     if len(paths) == 0:
@@ -228,7 +228,7 @@ def cmd_compare(tests: test_register.TestRegister, args, results: db.TestResults
         print("Missing old result set.", file=sys.stderr)
         sys.exit(1)
     new_set = get_result_set(args)
-    filter = build_filter(args)
+    filter = build_filter(args, tests, args.cfg)
     paths = sorted(tests.paths(results, new_set, filter))
     formatter = TreeFormatter()
 
@@ -265,7 +265,7 @@ def cmd_compare(tests: test_register.TestRegister, args, results: db.TestResults
 
 def cmd_list_runs(tests: test_register.TestRegister, args, results: db.TestResults):
     result_set = get_result_set(args)
-    filter = build_filter(args)
+    filter = build_filter(args, tests, args.cfg)
     paths = sorted(tests.paths(results, result_set, filter))
     formatter = TreeFormatter()
 
@@ -317,7 +317,7 @@ def cmd_run(tests: test_register.TestRegister, args, results: db.TestResults):
         return
 
     # select tests
-    filter = build_filter(args)
+    filter = build_filter(args, tests, args.cfg)
     paths = sorted(tests.paths(results, result_set, filter))
 
     if len(paths) == 0:
@@ -559,12 +559,14 @@ def command_line_parser():
     list_p = subparsers.add_parser("list", help="list test results")
     list_p.set_defaults(func=cmd_list)
     arg_filter(list_p)
+    arg_tags(list_p)
     arg_result_set(list_p)
     arg_run_nr(list_p)
 
     log_p = subparsers.add_parser("log", help="list test logs")
     log_p.set_defaults(func=cmd_log)
     arg_filter(log_p)
+    arg_tags(log_p)
     arg_result_set(log_p)
     arg_run_nr(log_p)
     log_p.add_argument(
@@ -576,6 +578,7 @@ def command_line_parser():
     run_p = subparsers.add_parser("run", help="run tests")
     run_p.set_defaults(func=cmd_run)
     arg_filter(run_p)
+    arg_tags(run_p)
     arg_result_set(run_p)
     run_p.add_argument(
         "--nr-runs",
@@ -593,6 +596,7 @@ def command_line_parser():
     compare_p = subparsers.add_parser("compare", help="compare two result sets")
     compare_p.set_defaults(func=cmd_compare)
     arg_filter(compare_p)
+    arg_tags(compare_p)
     compare_p.add_argument(
         "--old-result-set",
         metavar="RESULT_SET",
@@ -604,6 +608,7 @@ def command_line_parser():
     list_runs_p = subparsers.add_parser("list-runs", help="list each test run individually")
     list_runs_p.set_defaults(func=cmd_list_runs)
     arg_filter(list_runs_p)
+    arg_tags(list_runs_p)
     arg_result_set(list_runs_p)
     list_runs_p.add_argument(
         "--run-state",
