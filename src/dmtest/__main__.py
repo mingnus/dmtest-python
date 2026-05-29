@@ -10,7 +10,9 @@ import dmtest.thin.register as thin_register
 import dmtest.thin_migrate.register as thin_migrate_register
 import dmtest.vdo.register as vdo_register
 import dmtest.dependency_tracker as dep
+import dmtest.config as config
 import dmtest.test_filter as filter
+import dmtest.tag_expression as tag_expr
 from dmtest.utils import get_dmesg_log
 import io
 import itertools
@@ -471,7 +473,7 @@ def arg_filter(p):
     )
 
 
-def build_filter(args):
+def build_filter(args, tests=None, cfg=None):
     if args.and_filters:
         top_filter = filter.AndFilter()
     else:
@@ -488,6 +490,19 @@ def build_filter(args):
             top_filter.add_sub_filter(filter.NotFilter(filter.StateFilter(s[1:])))
         else:
             top_filter.add_sub_filter(filter.StateFilter(s))
+
+    # CLI --tags overrides config [run].tags
+    tag_expression = getattr(args, "tags", None)
+    if tag_expression is None and cfg:
+        tag_expression = cfg.get("tags")
+
+    if tag_expression and tests is not None:
+        matcher = tag_expr.parse_tag_expression(tag_expression)
+        tag_filter = filter.TagFilter(matcher, tests._tests)
+        combined = filter.AndFilter()
+        combined.add_sub_filter(top_filter)
+        combined.add_sub_filter(tag_filter)
+        return combined
 
     return top_filter
 
@@ -616,6 +631,11 @@ def main():
     if not hasattr(args, "func"):
         parser.print_help()
         sys.exit(0)
+
+    try:
+        args.cfg = config.read_config()
+    except (FileNotFoundError, ValueError):
+        args.cfg = None
 
     tests = test_register.TestRegister()
     blk_archive.register(tests)
