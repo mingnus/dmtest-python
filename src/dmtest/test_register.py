@@ -56,11 +56,12 @@ class TestRegister:
     def __init__(self):
         self._tests = {}
 
-    def register(self, path, callback, dep_fn=None):
+    def register(self, path, callback, dep_fn=None, tags=None):
         path = _normalise_path(path)
-        self._tests[path] = Test(dep_fn, callback)
+        t = frozenset(tags) if tags else frozenset()
+        self._tests[path] = Test(dep_fn, callback, t)
 
-    def register_batch(self, prefix, tests, batch_dep_fn=None):
+    def register_batch(self, prefix, tests, batch_dep_fn=None, batch_tags=None):
         # ensure a trailing slash
         prefix = str(prefix)
         if not prefix.endswith("/"):
@@ -69,7 +70,18 @@ class TestRegister:
         for entry in tests:
             path, callback, dep_fn = _parse_test_entry(entry)
             dep_fn = dep_fn or batch_dep_fn
-            self.register(prefix + path.lstrip("/"), callback, dep_fn)
+            self.register(prefix + path.lstrip("/"), callback, dep_fn, batch_tags)
+
+    def get_tags(self, path):
+        t = self._tests.get(path)
+        return t.tags if t else frozenset()
+
+    def all_tags(self):
+        tags = {}
+        for path, t in self._tests.items():
+            for tag in t.tags:
+                tags[tag] = tags.get(tag, 0) + 1
+        return tags
 
     def paths(self, results, result_set, filt=None):
         selected = []
