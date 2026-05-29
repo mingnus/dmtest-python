@@ -434,6 +434,15 @@ def cmd_health(tests: test_register.TestRegister, args, results):
 # Command line parser
 
 
+def arg_tags(p):
+    p.add_argument(
+        "--tags",
+        metavar="EXPRESSION",
+        type=str,
+        help="select tests matching the tag expression (e.g. 'not benchmark')",
+    )
+
+
 def arg_filter(p):
     p.add_argument(
         "--rx",
