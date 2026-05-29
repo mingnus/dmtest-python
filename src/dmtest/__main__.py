@@ -170,6 +170,10 @@ def cmd_list(tests: test_register.TestRegister, args, results: db.TestResults):
 
     for p in paths:
         print(f"{formatter.tree_line(p)}", end=" ")
+        if args.show_tags:
+            tags = tests.get_tags(p)
+            tag_str = f"[{', '.join(sorted(tags))}]" if tags else ""
+            print(f"{tag_str.ljust(30)}", end=" ")
         result = average_results(results.get_test_results(p, result_set, args.run_nr))
         if result is None:
             print("-")
@@ -561,6 +565,12 @@ def command_line_parser():
     arg_filter(list_p)
     arg_result_set(list_p)
     arg_run_nr(list_p)
+    list_p.add_argument(
+        "-T",
+        help="Show tags alongside test names",
+        action="store_true",
+        dest="show_tags",
+    )
 
     log_p = subparsers.add_parser("log", help="list test logs")
     log_p.set_defaults(func=cmd_log)
