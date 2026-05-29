@@ -32,27 +32,43 @@ class MissingTestDep(Exception):
 class Test(NamedTuple):
     dep_fn: Callable[[], None]
     test_fn: Callable[[fixture.Fixture], None]
+    tags: frozenset = frozenset()
 
 
 def _parse_test_entry(entry):
     if len(entry) == 2:
         path, callback = entry
-        return path, callback, None
+        return path, callback, None, None
 
     if len(entry) == 3:
-        path, callback, dep_fn = entry
-        return path, callback, dep_fn
+        path, callback, third = entry
+        if callable(third):
+            return path, callback, third, None
+        if isinstance(third, (list, set, frozenset)):
+            return path, callback, None, third
+        raise TypeError(
+            f"test '{path}': 3rd element must be callable (dep_fn) or list (tags)"
+        )
 
-    raise ValueError(f"test entry must have 2-3 elements, got {len(entry)}")
+    if len(entry) == 4:
+        path, callback, dep_fn, tags = entry
+        if dep_fn is not None and not callable(dep_fn):
+            raise TypeError(f"test '{path}': dep_fn must be callable or None")
+        if tags is not None and not isinstance(tags, (list, set, frozenset)):
+            raise TypeError(f"test '{path}': tags must be a list")
+        return path, callback, dep_fn, tags
+
+    raise ValueError(f"test entry must have 2-4 elements, got {len(entry)}")
 
 
 class TestRegister:
     def __init__(self):
         self._tests = {}
 
-    def register(self, path, callback, dep_fn=None):
+    def register(self, path, callback, dep_fn=None, tags=None):
         path = _normalise_path(path)
-        self._tests[path] = Test(dep_fn, callback)
+        t = frozenset(tags) if tags else frozenset()
+        self._tests[path] = Test(dep_fn, callback, t)
 
     def register_batch(self, prefix, tests, batch_dep_fn=None):
         # ensure a trailing slash
@@ -61,9 +77,9 @@ class TestRegister:
             prefix += "/"
 
         for entry in tests:
-            path, callback, dep_fn = _parse_test_entry(entry)
+            path, callback, dep_fn, tags = _parse_test_entry(entry)
             dep_fn = dep_fn or batch_dep_fn
-            self.register(prefix + path.lstrip("/"), callback, dep_fn)
+            self.register(prefix + path.lstrip("/"), callback, dep_fn, tags)
 
     def paths(self, results, result_set, filt=None):
         selected = []
