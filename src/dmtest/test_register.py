@@ -32,6 +32,7 @@ class MissingTestDep(Exception):
 class Test(NamedTuple):
     dep_fn: Callable[[], None]
     test_fn: Callable[[fixture.Fixture], None]
+    tags: frozenset = frozenset()
 
 
 def _parse_test_entry(entry):
