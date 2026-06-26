@@ -70,16 +70,21 @@ class TestRegister:
         t = frozenset(tags) if tags else frozenset()
         self._tests[path] = Test(dep_fn, callback, t)
 
-    def register_batch(self, prefix, tests, batch_dep_fn=None):
+    def register_batch(self, prefix, tests, batch_dep_fn=None, batch_tags=None):
         # ensure a trailing slash
         prefix = str(prefix)
         if not prefix.endswith("/"):
             prefix += "/"
 
+        if batch_tags is not None and not isinstance(batch_tags, (list, set, frozenset)):
+            raise TypeError(f"batch_tags must be a list")
+
         for entry in tests:
             path, callback, dep_fn, tags = _parse_test_entry(entry)
             dep_fn = dep_fn or batch_dep_fn
-            self.register(prefix + path.lstrip("/"), callback, dep_fn, tags)
+            merged_tags = set(tags or [])
+            merged_tags.update(batch_tags or [])
+            self.register(prefix + path.lstrip("/"), callback, dep_fn, merged_tags)
 
     def paths(self, results, result_set, filt=None):
         selected = []
