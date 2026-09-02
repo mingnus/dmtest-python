@@ -275,6 +275,26 @@ def bufio_params_tracker(cache_size=units.meg(300), max_age=300):
             )
 
 
+# Polls current_allocated_bytes until it drops to 'target' or below.  All the
+# reclaim paths hand off to dm_bufio_wq and report nothing back, so there is no
+# completion to wait on directly.
+def wait_for_cache_shrink(params, target, timeout=60):
+    deadline = time.monotonic() + timeout
+
+    while True:
+        alloc = params.current_allocated
+        if alloc <= target:
+            return alloc
+
+        if time.monotonic() >= deadline:
+            raise ValueError(
+                f"cache didn't shrink to {target // (1024 * 1024)}m within "
+                f"{timeout}s (still {alloc // (1024 * 1024)}m)"
+            )
+
+        time.sleep(0.5)
+
+
 # Activate bufio test device and create a thread set.  max_cache_size is given
 # in sectors
 @contextmanager
@@ -614,17 +634,31 @@ def t_multiple_caches(fix):
         tid.join()
 
 
-# Checks that buffers that haven't been used for a while get evicted.
+# Checks that lowering max_cache_size_bytes causes the cache to be trimmed.
+#
+# This test used to set max_age_seconds=30 and wait for dm-bufio to age the
+# buffers out.  Commit 9769378133bb ("dm-bufio: remove maximum age based
+# eviction", v6.16) deleted that machinery along with the 30s delayed work
+# that drove it.  max_age_seconds is still writable but is now documented as
+# "No longer does anything", so the write succeeded and the old test simply
+# sat on a flat cache size until it gave up.
+#
+# The cache size limiter is what survived on the non-reclaim side, so drive
+# that instead: lower the limit once the cache is full and confirm
+# evict_old() drains down to the new one.
 def t_evict_old(fix):
     data_dev = fix.cfg("data_dev")
     nr_blocks = units.gig(1) // units.kilo(4)
     data_size = utils.dev_size(data_dev)
     t = table.Table(targets.BufioTestTarget(data_size, data_dev))
 
+    # the limit we drop to once the cache is full, in sectors
+    new_cache_size = units.meg(100)
+
     # we want to keep the dev around once the program has
     # executed, so we have to build the stack by hand
     # rather than use bufio_tester().
-    with bufio_params_tracker(max_age=30) as params:
+    with bufio_params_tracker() as params:
         with dmdev.dev(t) as dev:
             with ThreadSet(dev) as tester:
                 with tester.program() as p:
@@ -646,14 +680,58 @@ def t_evict_old(fix):
                     p.write_sync()
                     p.checkpoint(2)
 
-            # the cache should automatically shrink as time
-            # goes by.
-            log.info("beginning to wait")
+            # Everything is clean now, but nothing will reclaim it on its
+            # own: do_global_cleanup() is only queued from the allocation path
+            # in adjust_total_allocated(), and we have stopped allocating.
             alloc1 = params.current_allocated
-            time.sleep(60)
-            alloc2 = params.current_allocated
-            if alloc2 >= alloc1:
-                raise ValueError("cache didn't shrink")
+            log.info(f"cache holds {alloc1 // (1024 * 1024)}m before reclaim")
+            if alloc1 == 0:
+                raise ValueError("nothing cached, test isn't exercising reclaim")
+
+            old_cache_size = params.max_cache_size
+            try:
+                # Lowering the limit does nothing on its own; there is no
+                # timer left to notice it.
+                params.max_cache_size = new_cache_size * 512
+
+                # do_global_cleanup() is only queued from
+                # adjust_total_allocated() when a buffer is allocated, so a
+                # handful of new buffers is enough to re-arm it.  Use blocks
+                # past the region we filled above so these are genuine cache
+                # misses -- __bufio_new() happens to allocate before it
+                # rechecks the tree, so a hit would work too, but that
+                # ordering is an implementation detail.
+                with ThreadSet(dev) as tester:
+                    with tester.program() as p:
+                        block = p.alloc_reg()
+                        buf = p.alloc_reg()
+
+                        p.lit(nr_blocks, block)
+                        with loop(p, 64):
+                            p.new_buf(block, buf)
+                            p.put_buf(buf)
+                            p.inc(block)
+
+                # evict_old() drains to
+                # cache_size - cache_size / DM_BUFIO_LOW_WATERMARK_RATIO.
+                #
+                # Note this can fail spuriously if another bufio client is
+                # active on the box: current_allocated_bytes is module wide,
+                # and evict_old() breaks out of its loop the moment
+                # __evict_a_few() returns 0.  __pop_client() takes the client
+                # with the oldest buffer and __evict_a_few() only scans
+                # LIST_CLEAN, so a foreign client with nothing clean to give
+                # up stalls the whole drain.
+                limit = params.max_cache_size
+                threshold = limit - limit // 16
+                alloc2 = wait_for_cache_shrink(params, threshold)
+                log.info(f"cache holds {alloc2 // (1024 * 1024)}m after reclaim")
+            finally:
+                # peak_allocated_bytes only ever climbs, and already holds the
+                # ~400m peak from the fill above.  Leaving the limit lowered
+                # would have bufio_params_tracker() check that peak against
+                # 100m on the way out.
+                params.max_cache_size = old_cache_size
 
 
 def register(tests):
