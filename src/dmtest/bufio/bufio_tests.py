@@ -275,6 +275,35 @@ def bufio_params_tracker(cache_size=units.meg(300), max_age=300):
             )
 
 
+# Polls current_allocated_bytes until it drops to 'target' or below.  All the
+# reclaim paths hand off to dm_bufio_wq and report nothing back, so there is no
+# completion to wait on directly.
+def wait_for_cache_shrink(params, target, timeout=60):
+    deadline = time.monotonic() + timeout
+
+    while True:
+        alloc = params.current_allocated
+        if alloc <= target:
+            return alloc
+
+        if time.monotonic() >= deadline:
+            raise ValueError(
+                f"cache didn't shrink to {target // (1024 * 1024)}m within "
+                f"{timeout}s (still {alloc // (1024 * 1024)}m)"
+            )
+
+        time.sleep(0.5)
+
+
+# Asks the kernel to run every registered slab shrinker.  A blunt, system wide
+# instrument -- it drops the dentry and inode caches along the way -- but it is
+# the only way to drive dm_bufio_shrink_scan() without manufacturing real
+# memory pressure.
+def drop_slab_caches():
+    with open("/proc/sys/vm/drop_caches", "w") as file:
+        file.write("2")
+
+
 # Activate bufio test device and create a thread set.  max_cache_size is given
 # in sectors
 @contextmanager
@@ -614,7 +643,19 @@ def t_multiple_caches(fix):
         tid.join()
 
 
-# Checks that buffers that haven't been used for a while get evicted.
+# Checks that idle buffers are handed back under memory pressure.
+#
+# This test used to set max_age_seconds=30 and wait for dm-bufio to age the
+# buffers out.  Commit 9769378133bb ("dm-bufio: remove maximum age based
+# eviction", v6.16) deleted that machinery along with the 30s delayed work
+# that drove it.  max_age_seconds is still writable but is now documented as
+# "No longer does anything", so the write succeeds and the old test simply sat
+# on a flat cache size until it gave up.
+#
+# The shrinker is what survived, so that is what we exercise.  Writing to
+# drop_caches runs drop_slab(), reaching dm_bufio_shrink_scan() ->
+# shrink_work() -> __scan(), which walks LIST_CLEAN and then LIST_DIRTY and
+# evicts down to retain_bytes for each client.
 def t_evict_old(fix):
     data_dev = fix.cfg("data_dev")
     nr_blocks = units.gig(1) // units.kilo(4)
@@ -624,7 +665,7 @@ def t_evict_old(fix):
     # we want to keep the dev around once the program has
     # executed, so we have to build the stack by hand
     # rather than use bufio_tester().
-    with bufio_params_tracker(max_age=30) as params:
+    with bufio_params_tracker() as params:
         with dmdev.dev(t) as dev:
             with ThreadSet(dev) as tester:
                 with tester.program() as p:
@@ -646,14 +687,29 @@ def t_evict_old(fix):
                     p.write_sync()
                     p.checkpoint(2)
 
-            # the cache should automatically shrink as time
-            # goes by.
-            log.info("beginning to wait")
+            # Everything is clean now, but nothing will reclaim it on its
+            # own: do_global_cleanup() is only queued from the allocation path
+            # in adjust_total_allocated(), and we have stopped allocating.
             alloc1 = params.current_allocated
-            time.sleep(60)
-            alloc2 = params.current_allocated
-            if alloc2 >= alloc1:
-                raise ValueError("cache didn't shrink")
+            log.info(f"cache holds {alloc1 // (1024 * 1024)}m before reclaim")
+            if alloc1 == 0:
+                raise ValueError("nothing cached, test isn't exercising reclaim")
+
+            log.info("triggering slab shrinkers")
+            drop_slab_caches()
+
+            # dm_bufio_shrink_scan() only bumps need_shrink and queues
+            # shrink_work before returning, so the eviction is asynchronous.
+            #
+            # __scan() aims for retain_bytes (256k by default) per client, so
+            # the real drop is from hundreds of megs down to almost nothing.
+            # We only assert on half the starting size because
+            # current_allocated_bytes is a module wide counter: any other
+            # bufio client on the box (thinp metadata, dm-verity, ...) is
+            # shrunk by the same drop_caches and leaves its own retain_bytes
+            # behind.
+            alloc2 = wait_for_cache_shrink(params, alloc1 // 2)
+            log.info(f"cache holds {alloc2 // (1024 * 1024)}m after reclaim")
 
 
 def register(tests):
